@@ -2505,7 +2505,8 @@ local Library do
             return KeybindList
         end
 
-        Library.Watermark = function(self, Name, Icon)
+        -- Watermarks are text-only: branding icons are deliberately unsupported.
+        Library.Watermark = function(self, Name)
             local Watermark = { }
 
             local Items = { } do 
