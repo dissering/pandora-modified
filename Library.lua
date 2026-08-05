@@ -1744,11 +1744,16 @@ local Library do
 
             if Library.KeyList then 
                 KeyListItem = Library.KeyList:Add("", "")
+                KeyListItem:Set(false)
             end
 
             local Modes = { }
 
             local Update = function()
+                if not KeyListItem then
+                    return
+                end
+
                 KeyListItem:SetText(Data.Name, Keybind.Mode)
                 KeyListItem:Set(Keybind.Toggled)
             end
