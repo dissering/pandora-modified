@@ -1,4 +1,4 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/dissering/pandora-modified/2917fd8999a265f5ab71677bf1436a4dc6eb37a9/Library.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/dissering/pandora-modified/2dc5fa85fbbec6f0c2e757331b129b8aacda92df/Library.lua"))()
 
 local Window = Library:Window({
     Title = "Window",
@@ -6,7 +6,6 @@ local Window = Library:Window({
 }) 
 
 local KeybindList = Library:KeybindList()
-local Watermark = Library:Watermark("This is a watermark", "rbxassetid://124454910007637")
 
 do 
     local Pages = {
@@ -91,7 +90,7 @@ do
         ]]
     }
 
-    local SettingsPage = Library:CreateSettingsPage(Window, KeybindList, Watermark)
+    local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 
     do -- Combat 1
         local SubPages = {
