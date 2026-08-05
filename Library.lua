@@ -2547,7 +2547,7 @@ local Library do
                     Name = "\0",
                     FontFace = Library.Font,
                     RichText = true,
-                    TextColor3 = FromRGB(74, 74, 74),
+                    TextColor3 = FromRGB(255, 255, 255),
                     BorderColor3 = FromRGB(0, 0, 0),
                     Text = Name,
                     Size = UDim2New(0, 0, 0, 15),
@@ -2564,7 +2564,7 @@ local Library do
                     Parent = Items["Watermark"].Instance,
                     Name = "\0",
                     Rotation = 90,
-                    Color = RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, FromRGB(158, 158, 158))}
+                    Color = RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, FromRGB(255, 255, 255))}
                 })                
             end
 
