@@ -15,7 +15,7 @@ local Library do
     local RunService = game:GetService("RunService")
     local CoreGui = cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
     local TweenService = game:GetService("TweenService")
-    --local Lighting = game:GetService("Lighting")
+    local Lighting = game:GetService("Lighting")
 
     gethui = gethui or function()
         return CoreGui
@@ -118,6 +118,19 @@ local Library do
         NotifHolder = nil,
         UnusedHolder = nil,
         KeyList = nil,
+
+        Effects = {
+            BlurEnabled = false,
+            BlurSize = 18,
+            SnowEnabled = false,
+            SnowAmount = 45,
+            SnowSpeed = 1,
+            Blur = nil,
+            SnowGui = nil,
+            SnowParticles = { },
+            SnowConnection = nil,
+            BlurToken = 0,
+        },
 
         Font = nil,
         SubFont = nil,
@@ -784,6 +797,23 @@ local Library do
     })
 
     Library.Unload = function(self)
+        if self.Effects then
+            if self.Effects.SnowConnection then
+                self.Effects.SnowConnection:Disconnect()
+                self.Effects.SnowConnection = nil
+            end
+
+            if self.Effects.SnowGui then
+                self.Effects.SnowGui:Destroy()
+                self.Effects.SnowGui = nil
+            end
+
+            if self.Effects.Blur then
+                self.Effects.Blur:Destroy()
+                self.Effects.Blur = nil
+            end
+        end
+
         for Index, Value in self.Connections do 
             Value.Connection:Disconnect()
         end
@@ -811,8 +841,12 @@ local Library do
     end
 
     Library.Round = function(self, Number, Decimals)
-        Number = tonumber(Number) or 0
-        Decimals = MathClamp(tonumber(Decimals) or 0, 0, 6)
+        Number = tonumber(Number)
+        if type(Number) ~= "number" or Number ~= Number or Number == math.huge or Number == -math.huge then
+            Number = 0
+        end
+
+        Decimals = MathClamp(MathFloor(tonumber(Decimals) or 0), 0, 6)
 
         if Decimals == 0 then
             return MathFloor(Number + (Number >= 0 and 0.5 or -0.5))
@@ -936,6 +970,132 @@ local Library do
         end)
 
         return HttpService:JSONEncode(Config)
+    end
+
+    Library.SetMenuBlur = function(self, Visible)
+        local Effects = self.Effects
+        if not Effects then
+            return
+        end
+
+        Effects.BlurToken += 1
+        local Token = Effects.BlurToken
+        Visible = Visible and Effects.BlurEnabled
+
+        if Visible then
+            local Blur = Effects.Blur
+            if not Blur or not Blur.Parent then
+                local Stale = Lighting:FindFirstChild("PandoraMenuBlur")
+                if Stale and Stale:IsA("BlurEffect") then
+                    Stale:Destroy()
+                end
+
+                Blur = InstanceNew("BlurEffect")
+                Blur.Name = "PandoraMenuBlur"
+                Blur.Size = 0
+                Blur.Parent = Lighting
+                Effects.Blur = Blur
+            end
+
+            TweenService:Create(Blur, TweenInfo.new(0.24, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                Size = MathClamp(tonumber(Effects.BlurSize) or 18, 0, 56)
+            }):Play()
+        elseif Effects.Blur and Effects.Blur.Parent then
+            local Blur = Effects.Blur
+            TweenService:Create(Blur, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = 0}):Play()
+            task.delay(0.24, function()
+                if Effects.Blur == Blur and Effects.BlurToken == Token and not Visible and Blur.Parent then
+                    Blur:Destroy()
+                    Effects.Blur = nil
+                end
+            end)
+        end
+    end
+
+    Library.SetMenuSnow = function(self, Enabled)
+        local Effects = self.Effects
+        if not Effects then
+            return
+        end
+
+        Effects.SnowEnabled = Enabled and true or false
+        if Effects.SnowConnection then
+            Effects.SnowConnection:Disconnect()
+            Effects.SnowConnection = nil
+        end
+
+        if Effects.SnowGui then
+            Effects.SnowGui:Destroy()
+            Effects.SnowGui = nil
+        end
+        Effects.SnowParticles = { }
+
+        if not Effects.SnowEnabled then
+            return
+        end
+
+        local Stale = gethui():FindFirstChild("PandoraMenuSnow")
+        if Stale then
+            Stale:Destroy()
+        end
+
+        local SnowGui = InstanceNew("ScreenGui")
+        SnowGui.Name = "PandoraMenuSnow"
+        SnowGui.IgnoreGuiInset = true
+        SnowGui.ResetOnSpawn = false
+        SnowGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+        SnowGui.DisplayOrder = 1
+        SnowGui.Parent = gethui()
+        Effects.SnowGui = SnowGui
+
+        local Amount = MathClamp(MathFloor(tonumber(Effects.SnowAmount) or 45), 10, 150)
+        for Index = 1, Amount do
+            local Flake = InstanceNew("Frame")
+            local Size = math.random(2, 4)
+            Flake.Name = "flake"
+            Flake.AnchorPoint = Vector2New(0.5, 0.5)
+            Flake.BackgroundColor3 = FromRGB(255, 255, 255)
+            Flake.BackgroundTransparency = math.random(20, 55) / 100
+            Flake.BorderSizePixel = 0
+            Flake.Size = UDim2FromOffset(Size, Size)
+            Flake.ZIndex = 1
+            Flake.Parent = SnowGui
+
+            local Corner = InstanceNew("UICorner")
+            Corner.CornerRadius = UDimNew(1, 0)
+            Corner.Parent = Flake
+
+            TableInsert(Effects.SnowParticles, {
+                Frame = Flake,
+                X = math.random(),
+                Y = -math.random(),
+                Fall = 0.055 + math.random() * 0.11,
+                Drift = (math.random() - 0.5) * 0.025,
+                Phase = math.random() * math.pi * 2,
+            })
+        end
+
+        Effects.SnowConnection = RunService.RenderStepped:Connect(function(Delta)
+            if not Effects.SnowEnabled or not SnowGui.Parent then
+                return
+            end
+
+            local Speed = MathClamp(tonumber(Effects.SnowSpeed) or 1, 0.1, 4)
+            for _, Particle in Effects.SnowParticles do
+                Particle.Phase += Delta * 1.5
+                Particle.Y += Particle.Fall * Delta * Speed
+                Particle.X += (Particle.Drift + math.sin(Particle.Phase) * 0.0007) * Delta * Speed
+
+                if Particle.Y > 1.04 then
+                    Particle.Y = -0.03
+                    Particle.X = math.random()
+                end
+                if Particle.X > 1.03 then Particle.X = -0.03 end
+                if Particle.X < -0.03 then Particle.X = 1.03 end
+
+                Particle.Frame.Position = UDim2New(Particle.X, 0, Particle.Y, 0)
+            end
+        end)
     end
 
     Library.ApplyConfigFlag = function(self, Flag)
@@ -2885,6 +3045,7 @@ local Library do
                 end
 
                 Window.IsOpen = Bool
+                Library:SetMenuBlur(Window.IsOpen)
 
                 Debounce = true 
 
@@ -3911,6 +4072,33 @@ local Library do
         Library.Sections.Slider = function(self, Data)
             Data = Data or { }
 
+            local Minimum = tonumber(Data.Min or Data.min) or 0
+            local Maximum = tonumber(Data.Max or Data.max) or 100
+            if Maximum < Minimum then
+                Minimum, Maximum = Maximum, Minimum
+            end
+
+            local RawDecimals = tonumber(Data.Decimals or Data.decimals) or 0
+            local Decimals = 0
+            local ImplicitStep
+            if RawDecimals > 0 and RawDecimals < 1 then
+                -- Older Pandora calls used Decimals as a literal increment
+                -- (for example 0.01). Preserve that API while allowing the
+                -- newer integer form to mean decimal places.
+                ImplicitStep = RawDecimals
+                local Precision = RawDecimals
+                while Precision < 0.999999 and Decimals < 6 do
+                    Precision *= 10
+                    Decimals += 1
+                end
+            else
+                Decimals = MathClamp(MathFloor(RawDecimals), 0, 6)
+            end
+            local Step = tonumber(Data.Step or Data.step)
+            if not Step or Step <= 0 or Step ~= Step or Step == math.huge then
+                Step = ImplicitStep or (Decimals > 0 and 10 ^ -Decimals or 1)
+            end
+
             local Slider = {
                 Window = self.Window,
                 Page = self.Page,
@@ -3918,11 +4106,12 @@ local Library do
 
                 Name = Data.Name or Data.name or "Slider",
                 Flag = Data.Flag or Data.flag or Library:NextFlag(),
-                Min = Data.Min or Data.min or 0,
-                Decimals = Data.Decimals or Data.decimals or 1,
+                Min = Minimum,
+                Decimals = Decimals,
+                Step = Step,
                 Suffix = Data.Suffix or Data.suffix or "",
-                Max = Data.Max or Data.max or 100,
-                Default = Data.Default or Data.Default or 0,
+                Max = Maximum,
+                Default = Data.Default or Data.default or Minimum,
                 Callback = Data.Callback or Data.callback or function() end,
 
                 Value = 0,
@@ -4032,11 +4221,22 @@ local Library do
             end
 
             function Slider:Set(Value)
+                Value = tonumber(Value)
+                if type(Value) ~= "number" or Value ~= Value or Value == math.huge or Value == -math.huge then
+                    Value = Slider.Value ~= 0 and Slider.Value or Slider.Default
+                end
+
+                Value = MathClamp(Value, Slider.Min, Slider.Max)
+                Value = Slider.Min + MathFloor(((Value - Slider.Min) / Slider.Step) + 0.5) * Slider.Step
                 Slider.Value = Library:Round(MathClamp(Value, Slider.Min, Slider.Max), Slider.Decimals)
                 Library:SetFlag(Slider.Flag, Slider.Value)
 
-                Items["Accent"]:Tween(TweenInfo.new(Library.Tween.Time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2New((Slider.Value - Slider.Min) / (Slider.Max - Slider.Min), 0, 1, 0)})
-                Items["Value"].Instance.Text = StringFormat("%s%s", Slider.Value, Slider.Suffix)
+                local Range = Slider.Max - Slider.Min
+                local Fill = Range > 0 and MathClamp((Slider.Value - Slider.Min) / Range, 0, 1) or 0
+                Items["Accent"]:Tween(TweenInfo.new(Library.Tween.Time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2New(Fill, 0, 1, 0)})
+
+                local DisplayValue = Slider.Decimals == 0 and tostring(MathFloor(Slider.Value)) or StringFormat("%." .. Slider.Decimals .. "f", Slider.Value):gsub("(%..-)0+$", "%1"):gsub("%.$", "")
+                Items["Value"].Instance.Text = StringFormat("%s%s", DisplayValue, Slider.Suffix)
 
                 if Slider.Callback then 
                     Library:SafeCall(Slider.Callback, Slider.Value)
@@ -4051,7 +4251,9 @@ local Library do
                 if Input.UserInputType == Enum.UserInputType.MouseButton1 then
                     Slider.Sliding = true 
 
-                    local SizeX = (Input.Position.X - Items["Indicator"].Instance.AbsolutePosition.X) / Items["Indicator"].Instance.AbsoluteSize.X
+                    local Width = Items["Indicator"].Instance.AbsoluteSize.X
+                    if Width <= 0 then return end
+                    local SizeX = (Input.Position.X - Items["Indicator"].Instance.AbsolutePosition.X) / Width
                     local Value = ((Slider.Max - Slider.Min) * SizeX) + Slider.Min
 
                     Slider:Set(Value)
@@ -4067,7 +4269,9 @@ local Library do
             Library:Connect(UserInputService.InputChanged, function(Input)
                 if Input.UserInputType == Enum.UserInputType.MouseMovement then 
                     if Slider.Sliding then
-                        local SizeX = (Input.Position.X - Items["Indicator"].Instance.AbsolutePosition.X) / Items["Indicator"].Instance.AbsoluteSize.X
+                        local Width = Items["Indicator"].Instance.AbsoluteSize.X
+                        if Width <= 0 then return end
+                        local SizeX = (Input.Position.X - Items["Indicator"].Instance.AbsolutePosition.X) / Width
                         local Value = ((Slider.Max - Slider.Min) * SizeX) + Slider.Min
 
                         Slider:Set(Value)
@@ -5287,6 +5491,57 @@ local Library do
             Decimals = 0.01,
             Callback = function(Value)
                 Library.FadeSpeed = Value
+            end
+        })
+
+        MenuSection:Toggle({Name = "Menu Blur", Flag = "Menu Blur", Default = false, Callback = function(Value)
+            Library.Effects.BlurEnabled = Value
+            Library:SetMenuBlur(Value and Window.IsOpen)
+        end})
+
+        MenuSection:Slider({
+            Name = "Blur Strength",
+            Flag = "Blur Strength",
+            Default = Library.Effects.BlurSize,
+            Min = 0,
+            Max = 56,
+            Decimals = 0,
+            Callback = function(Value)
+                Library.Effects.BlurSize = Value
+                if Library.Effects.BlurEnabled then
+                    Library:SetMenuBlur(Window.IsOpen)
+                end
+            end
+        })
+
+        MenuSection:Toggle({Name = "Menu Snow", Flag = "Menu Snow", Default = false, Callback = function(Value)
+            Library:SetMenuSnow(Value)
+        end})
+
+        MenuSection:Slider({
+            Name = "Snow Amount",
+            Flag = "Snow Amount",
+            Default = Library.Effects.SnowAmount,
+            Min = 10,
+            Max = 150,
+            Decimals = 0,
+            Callback = function(Value)
+                Library.Effects.SnowAmount = Value
+                if Library.Effects.SnowEnabled then
+                    Library:SetMenuSnow(true)
+                end
+            end
+        })
+
+        MenuSection:Slider({
+            Name = "Snow Speed",
+            Flag = "Snow Speed",
+            Default = Library.Effects.SnowSpeed,
+            Min = 0.1,
+            Max = 4,
+            Decimals = 1,
+            Callback = function(Value)
+                Library.Effects.SnowSpeed = Value
             end
         })
 
