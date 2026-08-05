@@ -810,9 +810,16 @@ local Library do
         return getcustomasset(self.Folders.Assets .. "/" .. ImageData[1])
     end
 
-    Library.Round = function(self, Number, Float)
-        local Multiplier = 1 / (Float or 1)
-        return MathFloor(Number * Multiplier) / Multiplier
+    Library.Round = function(self, Number, Decimals)
+        Number = tonumber(Number) or 0
+        Decimals = MathClamp(tonumber(Decimals) or 0, 0, 6)
+
+        if Decimals == 0 then
+            return MathFloor(Number + (Number >= 0 and 0.5 or -0.5))
+        end
+
+        local Multiplier = 10 ^ Decimals
+        return MathFloor(Number * Multiplier + (Number >= 0 and 0.5 or -0.5)) / Multiplier
     end
 
     Library.Thread = function(self, Function)
@@ -1902,11 +1909,12 @@ local Library do
 
             function Keybind:Set(Key)
                 if StringFind(tostring(Key), "Enum") then 
-                    Keybind.Key = tostring(Key)
+                    local IsCleared = Key.Name == "Backspace"
+                    Keybind.Key = IsCleared and "" or tostring(Key)
 
-                    Key = Key.Name == "Backspace" and "None" or Key.Name
+                    Key = IsCleared and "NONE" or Key.Name
 
-                    local KeyString = Keys[Keybind.Key] or StringGSub(Key, "Enum.", "") or "None"
+                    local KeyString = IsCleared and "NONE" or Keys[Keybind.Key] or StringGSub(Key, "Enum.", "") or "NONE"
                     local TextToDisplay = "["..StringGSub(StringGSub(KeyString, "KeyCode.", ""), "UserInputType.", "").."]" or "[None]"
 
                     Keybind.Value = TextToDisplay
@@ -1924,8 +1932,9 @@ local Library do
 
                     Update()
                 elseif type(Key) == "table" then
-                    local RealKey = Key.Key == "Backspace" and "None" or Key.Key
-                    Keybind.Key = tostring(Key.Key)
+                    local IsCleared = Key.Key == "Backspace"
+                    local RealKey = IsCleared and "NONE" or Key.Key
+                    Keybind.Key = IsCleared and "" or tostring(Key.Key)
 
                     if Key.Mode then
                         Modes[Key.Mode]:Toggle()
@@ -1935,10 +1944,8 @@ local Library do
                         Keybind:SetMode("Toggle")
                     end
 
-                    local KeyString = Keys[Keybind.Key] or StringGSub(tostring(RealKey), "Enum.", "") or RealKey
-                    local TextToDisplay = KeyString and StringGSub(StringGSub(KeyString, "KeyCode.", ""), "UserInputType.", "") or "[None]"
-
-                    TextToDisplay = "["..StringGSub(StringGSub(KeyString, "KeyCode.", ""), "UserInputType.", "").."]"
+                    local KeyString = IsCleared and "NONE" or Keys[Keybind.Key] or StringGSub(tostring(RealKey), "Enum.", "") or "NONE"
+                    local TextToDisplay = "["..StringGSub(StringGSub(KeyString, "KeyCode.", ""), "UserInputType.", "").."]"
 
                     Keybind.Value = TextToDisplay
                     Items["KeyButton"].Instance.Text = TextToDisplay
@@ -2094,7 +2101,7 @@ local Library do
             end)
 
             Library:Connect(UserInputService.InputBegan, function(Input)
-                if Keybind.Value == "None" then
+                if not Keybind.Key or Keybind.Key == "" then
                     return
                 end
 
@@ -2130,7 +2137,7 @@ local Library do
             end)
 
             Library:Connect(UserInputService.InputEnded, function(Input)
-                if Keybind.Value == "None" then
+                if not Keybind.Key or Keybind.Key == "" then
                     return
                 end
 
@@ -3741,7 +3748,7 @@ local Library do
 
                     Name = Data.Name or Data.name or Toggle.Name,
                     Flag = Data.Flag or Data.flag or Library:NextFlag(),
-                    Default = Data.Default or Data.default or Enum.KeyCode.RightShift,
+                    Default = Data.Default or Data.default,
                     Callback = Data.Callback or Data.callback or function() end,
                     Mode = Data.Mode or Data.mode or "Toggle",
                 }
