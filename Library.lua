@@ -84,6 +84,7 @@ local Library do
         },
 
         ConfigFile = "Pandora/settings.json",
+        SettingsVersion = 3,
         PendingConfig = nil,
         AutoSaveEnabled = false,
         AutoSaveQueued = false,
@@ -202,14 +203,14 @@ local Library do
 
     local Themes = {
         ["Preset"] = {
-            ["Accent"] = FromRGB(252, 220, 90), -- #FCDC5A
-            ["Dark Accent"] = FromRGB(171, 137, 36),
-            ["Background"] = FromRGB(15, 19, 24),
-            ["Surface"] = FromRGB(21, 27, 35),
-            ["Element"] = FromRGB(31, 40, 51),
-            ["Border"] = FromRGB(45, 56, 70),
-            ["Text"] = FromRGB(239, 243, 247),
-            ["Muted"] = FromRGB(160, 170, 182)
+            ["Accent"] = FromRGB(255, 255, 255), -- #FFFFFF
+            ["Dark Accent"] = FromRGB(180, 180, 180),
+            ["Background"] = FromRGB(20, 20, 20),
+            ["Surface"] = FromRGB(26, 26, 26),
+            ["Element"] = FromRGB(20, 20, 20),
+            ["Border"] = FromRGB(35, 35, 35),
+            ["Text"] = FromRGB(221, 221, 221),
+            ["Muted"] = FromRGB(74, 74, 74)
         }
     }
 
@@ -904,7 +905,7 @@ local Library do
 
     Library.GetConfig = function(self)
         local Config = {
-            Version = 2,
+            Version = self.SettingsVersion,
             Flags = { },
             Theme = { }
         }
@@ -980,8 +981,15 @@ local Library do
         self.PendingConfig = Decoded.Flags or Decoded
         self.IsLoadingConfig = true
 
+        local IsCurrentTheme = (Decoded.Version or 1) >= self.SettingsVersion
+        if not IsCurrentTheme then
+            for _, Slot in {"Accent", "Dark Accent", "Background", "Surface", "Element", "Border", "Text", "Muted"} do
+                self.PendingConfig["Theme " .. Slot] = nil
+            end
+        end
+
         local Theme = Decoded.Theme
-        if type(Theme) == "table" then
+        if IsCurrentTheme and type(Theme) == "table" then
             for Index, Value in Theme do
                 if self.Theme[Index] and type(Value) == "string" then
                     self:ChangeTheme(Index, FromHex(Value))

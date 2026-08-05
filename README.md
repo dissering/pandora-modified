@@ -1,8 +1,8 @@
 # Pandora
 
-Customized Pandora UI library with a compact, logo-free horizontal-tab layout.
+Customized Pandora UI library with its original black base, a white accent, and a compact logo-free horizontal-tab layout.
 
-- Default accent: `#FCDC5A`
+- Default accent: `#FFFFFF`
 - Tabs: text-based (for example, Combat, Visuals, Misc, Settings)
 - No `Configs` directory or manual profile controls
 - Settings are loaded from and automatically saved to `Pandora/settings.json`
