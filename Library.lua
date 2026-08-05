@@ -62,6 +62,33 @@ local Library do
 
     --local RectNew = Rect.new
 
+    -- UI input can arrive while a frame is being detached/reparented.  Keep
+    -- all coordinate comparisons behind these guards so a transient rect
+    -- never turns into "attempt to compare number < nil".
+    local IsFiniteNumber = function(Value)
+        return type(Value) == "number" and Value == Value and Value > -math.huge and Value < math.huge
+    end
+
+    local IsFiniteVector2 = function(Value)
+        return typeof(Value) == "Vector2" and IsFiniteNumber(Value.X) and IsFiniteNumber(Value.Y)
+    end
+
+    local GetGuiRect = function(Frame)
+        Frame = type(Frame) == "table" and Frame.Instance or Frame
+        if not Frame then
+            return nil
+        end
+
+        local Success, Position, Size = pcall(function()
+            return Frame.AbsolutePosition, Frame.AbsoluteSize
+        end)
+        if not Success or not IsFiniteVector2(Position) or not IsFiniteVector2(Size) then
+            return nil
+        end
+
+        return Position, Size
+    end
+
     Library = {
         Theme =  { },
 
@@ -1242,12 +1269,16 @@ local Library do
     end
 
     Library.IsMouseOverFrame = function(self, Frame)
-        Frame = Frame.Instance
+        local Position, Size = GetGuiRect(Frame)
+        local Success, MouseX, MouseY = pcall(function()
+            return Mouse.X, Mouse.Y
+        end)
+        if not Position or not Size or not Success or not IsFiniteNumber(MouseX) or not IsFiniteNumber(MouseY) then
+            return false
+        end
 
-        local MousePosition = Vector2New(Mouse.X, Mouse.Y)
-
-        return MousePosition.X >= Frame.AbsolutePosition.X and MousePosition.X <= Frame.AbsolutePosition.X + Frame.AbsoluteSize.X 
-        and MousePosition.Y >= Frame.AbsolutePosition.Y and MousePosition.Y <= Frame.AbsolutePosition.Y + Frame.AbsoluteSize.Y
+        return MouseX >= Position.X and MouseX <= Position.X + Size.X
+        and MouseY >= Position.Y and MouseY <= Position.Y + Size.Y
     end
 
     Library.GetLighterColor = function(self, Color, Increment)
@@ -1562,19 +1593,19 @@ local Library do
             end
 
             local CompareVectors = function(PointA, PointB)
+                if not IsFiniteVector2(PointA) or not IsFiniteVector2(PointB) then
+                    return false
+                end
                 return (PointA.X < PointB.X) or (PointA.Y < PointB.Y)
             end
 
             local IsClipped = function(Object, Column)
-                local Parent = Column
-                
-                local BoundryTop = Parent.AbsolutePosition
-                local BoundryBottom = BoundryTop + Parent.AbsoluteSize
-
-                local Top = Object.AbsolutePosition
-                local Bottom = Top + Object.AbsoluteSize 
-
-                return CompareVectors(Top, BoundryTop) or CompareVectors(BoundryBottom, Bottom)
+                local BoundryTop, BoundrySize = GetGuiRect(Column)
+                local Top, Size = GetGuiRect(Object)
+                if not BoundryTop or not BoundrySize or not Top or not Size then
+                    return true
+                end
+                return CompareVectors(Top, BoundryTop) or CompareVectors(BoundryTop + BoundrySize, Top + Size)
             end
 
             Items["ColorpickerButton"]:Connect("Changed", function(Property)
@@ -2042,19 +2073,19 @@ local Library do
             end
 
             local CompareVectors = function(PointA, PointB)
+                if not IsFiniteVector2(PointA) or not IsFiniteVector2(PointB) then
+                    return false
+                end
                 return (PointA.X < PointB.X) or (PointA.Y < PointB.Y)
             end
 
             local IsClipped = function(Object, Column)
-                local Parent = Column
-                
-                local BoundryTop = Parent.AbsolutePosition
-                local BoundryBottom = BoundryTop + Parent.AbsoluteSize
-
-                local Top = Object.AbsolutePosition
-                local Bottom = Top + Object.AbsoluteSize 
-
-                return CompareVectors(Top, BoundryTop) or CompareVectors(BoundryBottom, Bottom)
+                local BoundryTop, BoundrySize = GetGuiRect(Column)
+                local Top, Size = GetGuiRect(Object)
+                if not BoundryTop or not BoundrySize or not Top or not Size then
+                    return true
+                end
+                return CompareVectors(Top, BoundryTop) or CompareVectors(BoundryTop + BoundrySize, Top + Size)
             end
 
             Items["KeyButton"]:Connect("Changed", function(Property)
@@ -4774,19 +4805,19 @@ local Library do
             end
 
             local CompareVectors = function(PointA, PointB)
+                if not IsFiniteVector2(PointA) or not IsFiniteVector2(PointB) then
+                    return false
+                end
                 return (PointA.X < PointB.X) or (PointA.Y < PointB.Y)
             end
 
             local IsClipped = function(Object, Column)
-                local Parent = Column
-                
-                local BoundryTop = Parent.AbsolutePosition
-                local BoundryBottom = BoundryTop + Parent.AbsoluteSize
-
-                local Top = Object.AbsolutePosition
-                local Bottom = Top + Object.AbsoluteSize 
-
-                return CompareVectors(Top, BoundryTop) or CompareVectors(BoundryBottom, Bottom)
+                local BoundryTop, BoundrySize = GetGuiRect(Column)
+                local Top, Size = GetGuiRect(Object)
+                if not BoundryTop or not BoundrySize or not Top or not Size then
+                    return true
+                end
+                return CompareVectors(Top, BoundryTop) or CompareVectors(BoundryTop + BoundrySize, Top + Size)
             end
 
             Items["Indicator"]:Connect("Changed", function(Property)
