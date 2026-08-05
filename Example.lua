@@ -1,4 +1,4 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/dissering/pandora-modified/e5d0ddbbdeef349bed4d4ac6a5b8c157216a40f5/Library.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/dissering/pandora-modified/5ed8c0dbd2df75f593232e164fd42a4fd722bf7a/Library.lua"))()
 
 local Window = Library:Window({
     Title = "Window",
