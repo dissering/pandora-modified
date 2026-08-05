@@ -5250,9 +5250,11 @@ local Library do
             KeybindList:SetVisibility(Value)
         end})
 
-        MenuSection:Toggle({Name = "Watermark", Flag = "Watermark", Default = true, Callback = function(Value)
-            Watermark:SetVisibility(Value)
-        end})
+        if Watermark then
+            MenuSection:Toggle({Name = "Watermark", Flag = "Watermark", Default = true, Callback = function(Value)
+                Watermark:SetVisibility(Value)
+            end})
+        end
 
         MenuSection:Label("Menu Keybind"):Keybind({
             Name = "UI",
