@@ -2541,21 +2541,6 @@ local Library do
                     ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 })
                 
-                Items["Logo"] = Instances:Create("ImageLabel", {
-                    Parent = Items["Watermark"].Instance,
-                    Name = "\0",
-                    ImageColor3 = FromRGB(166, 147, 243),
-                    ScaleType = Enum.ScaleType.Fit,
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 0.5),
-                    Image = Icon,
-                    BackgroundTransparency = 1,
-                    Position = UDim2New(0, 0, 0.5, 0),
-                    Size = UDim2New(0, 20, 0, 20),
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(255, 255, 255)
-                })  Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
-                
                 Items["Text"] = Instances:Create("TextLabel", {
                     Parent = Items["Watermark"].Instance,
                     Name = "\0",
@@ -2568,7 +2553,7 @@ local Library do
                     AnchorPoint = Vector2New(0, 0.5),
                     BorderSizePixel = 0,
                     BackgroundTransparency = 1,
-                    Position = UDim2New(0, 28, 0.5, -2),
+                    Position = UDim2New(0, 0, 0.5, -2),
                     AutomaticSize = Enum.AutomaticSize.X,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
